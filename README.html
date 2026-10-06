@@ -1,0 +1,237 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Virtual Keyboard Simulator — Project Notes</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='2' y='6' width='28' height='20' rx='4' fill='%233178c6'/%3E%3Crect x='6' y='10' width='6' height='5' rx='1' fill='white'/%3E%3Crect x='14' y='10' width='6' height='5' rx='1' fill='white'/%3E%3Crect x='22' y='10' width='4' height='5' rx='1' fill='white'/%3E%3Crect x='6' y='18' width='6' height='5' rx='1' fill='%23D6E4F5'/%3E%3Crect x='14' y='18' width='6' height='5' rx='1' fill='%23D6E4F5'/%3E%3Crect x='22' y='18' width='4' height='5' rx='1' fill='%23D6E4F5'/%3E%3C/svg%3E">
+<style>
+  :root{
+    --bg:#f6f8fa; --panel:#ffffff; --line:#e4e7ec; --txt:#1f2328; --sub:#5b6570;
+    --accent:#3178c6; --code:#f3f5f7;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{background:var(--bg);color:var(--txt);font-family:"Segoe UI","Microsoft YaHei",system-ui,sans-serif;line-height:1.75;-webkit-font-smoothing:antialiased}
+  a{color:var(--accent);text-decoration:none}
+  .wrap{max-width:960px;margin:0 auto;padding:0 20px}
+
+  nav{position:sticky;top:0;z-index:10;background:rgba(255,255,255,.92);border-bottom:1px solid var(--line)}
+  nav .wrap{display:flex;align-items:center;gap:18px;height:54px;flex-wrap:wrap}
+  nav .brand{display:flex;align-items:center;gap:8px;font-weight:600;color:var(--txt)}
+  nav .links{margin-left:auto;display:flex;gap:16px;flex-wrap:wrap}
+  nav .links a{font-size:13.5px;color:var(--sub)}
+  nav .links a:hover{color:var(--accent)}
+
+  header{padding:56px 0 32px}
+  header h1{font-size:clamp(26px,4.5vw,38px);font-weight:700;letter-spacing:.5px}
+  header .lead{color:var(--sub);font-size:16.5px;max-width:660px;margin-top:12px}
+  .badges{display:flex;gap:8px;margin-top:20px;flex-wrap:wrap}
+  .badge{background:#eef2f7;border:1px solid var(--line);border-radius:16px;padding:4px 12px;font-size:13px;color:var(--txt)}
+  .badge b{color:var(--accent);font-weight:600}
+
+  section{padding:22px 0 10px}
+  h2{font-size:21px;font-weight:600;display:flex;align-items:center;gap:9px;margin-bottom:14px}
+  h2 .ic{width:24px;height:24px;flex:none}
+  h2 .ic svg{display:block}
+  h3{font-size:15.5px;font-weight:600;margin:20px 0 8px;color:var(--txt)}
+
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:18px 20px;margin:12px 0}
+  .card p{color:var(--sub);font-size:14.5px}
+  .card p+p{margin-top:6px}
+  .card b{color:var(--txt);font-weight:600}
+
+  pre.tree{background:var(--code);border:1px solid var(--line);border-radius:8px;padding:16px 18px;overflow-x:auto;font-family:Consolas,"Courier New",monospace;font-size:13px;line-height:1.7;color:#374151}
+  pre.tree .d{color:var(--accent);font-weight:600}
+  pre.tree .cm{color:#8a94a0}
+
+  .group{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:16px 18px;margin:12px 0}
+  .group h3{margin:0 0 2px;color:var(--accent);font-size:14.5px}
+  .group .ghint{color:var(--sub);font-size:12.5px;margin-bottom:8px}
+  .file{display:flex;gap:12px;padding:7px 0;border-top:1px dashed var(--line);align-items:flex-start}
+  .file:first-of-type{border-top:none}
+  .file .fname{flex:none;min-width:200px;font-weight:600;color:var(--txt);font-size:13.5px}
+  .file .fdesc{color:var(--sub);font-size:13.5px}
+
+  ol.steps{list-style:none;counter-reset:s;margin:4px 0}
+  ol.steps li{counter-increment:s;display:flex;gap:12px;align-items:flex-start;padding:8px 0;border-top:1px dashed var(--line)}
+  ol.steps li:first-of-type{border-top:none}
+  ol.steps li::before{content:counter(s);flex:none;width:24px;height:24px;border-radius:6px;background:var(--accent);color:#fff;font-weight:600;font-size:13px;display:flex;align-items:center;justify-content:center;margin-top:2px}
+  ol.steps li div b{color:var(--txt)}
+  ol.steps li div p{color:var(--sub);font-size:13.5px}
+  ul.plain{list-style:none;margin:4px 0}
+  ul.plain li{padding:6px 0;border-top:1px dashed var(--line);display:flex;gap:10px;align-items:flex-start;color:var(--sub);font-size:14px}
+  ul.plain li:first-of-type{border-top:none}
+  ul.plain li b{color:var(--txt);font-weight:600;flex:none;min-width:150px}
+
+  code{background:var(--code);border:1px solid var(--line);border-radius:4px;padding:1px 6px;font-family:Consolas,"Courier New",monospace;font-size:12.5px;color:#374151}
+  pre.cmd{background:var(--code);border:1px solid var(--line);border-radius:8px;padding:12px 14px;overflow-x:auto;font-family:Consolas,"Courier New",monospace;font-size:12.5px;line-height:1.7;color:#374151;margin:8px 0}
+
+  footer{border-top:1px solid var(--line);margin-top:36px;padding:24px 0 30px;color:var(--sub);font-size:13px;text-align:center}
+
+  @media (max-width:640px){
+    nav .links{display:none}
+    .file{flex-direction:column;gap:2px}
+    .file .fname{min-width:0}
+    ul.plain li{flex-direction:column;gap:2px}
+    ul.plain li b{min-width:0}
+    header{padding:40px 0 24px}
+  }
+</style>
+</head>
+<body>
+
+<nav><div class="wrap">
+  <div class="brand">
+    <svg width="20" height="20" viewBox="0 0 32 32" aria-hidden="true"><rect x="2" y="6" width="28" height="20" rx="4" fill="#3178C6"/><rect x="6" y="10" width="6" height="5" rx="1" fill="#fff"/><rect x="14" y="10" width="6" height="5" rx="1" fill="#fff"/><rect x="22" y="10" width="4" height="5" rx="1" fill="#fff"/><rect x="6" y="18" width="6" height="5" rx="1" fill="#D6E4F5"/><rect x="14" y="18" width="6" height="5" rx="1" fill="#D6E4F5"/><rect x="22" y="18" width="4" height="5" rx="1" fill="#D6E4F5"/></svg>
+    Virtual Keyboard Simulator
+  </div>
+  <div class="links">
+    <a href="#struct">Directory</a>
+    <a href="#files">Files</a>
+    <a href="#quick">Quick Start</a>
+    <a href="#install">Install &amp; Distribute</a>
+    <a href="#dev">Development</a>
+  </div>
+</div></nav>
+
+<header><div class="wrap">
+  <h1>Virtual Keyboard Simulator</h1>
+  <p class="lead">A Windows desktop application: define custom keyboard key sequences (press time / release time / press duration), a draggable timeline, visual recording (auto-generates a sequence as you type), real key injection, a global emergency stop, and mod extension support (built-in Music mod: import a MIDI and auto-generate a performance sequence; Quick Input mod: timed text input and quick sequence arrangement with simultaneous-key support; a mod's UI can be injected directly into the main window's right-hand panel without any popup).</p>
+  <div class="badges">
+    <span class="badge">C# / <b>.NET 4.0</b></span>
+    <span class="badge">WinForms</span>
+    <span class="badge">Built-in csc · <b>zero deps</b></span>
+    <span class="badge">Win<b>7 / 10 / 11</b> compatible</span>
+  </div>
+</div></header>
+
+<main class="wrap">
+
+  <!-- ===== Overview ===== -->
+  <section>
+    <h2><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="#3178C6" stroke-width="1.8" stroke-linecap="round"><path d="M4 6h16M4 12h10M4 18h7"/></svg></span>Project Overview</h2>
+    <div class="card">
+      <p><b>Features</b>: full 104-key keyboard, step list (press/release timeline), draggable timeline table, visual recording, real key injection, auto-minimize on run, delay countdown, Ctrl+F9 global emergency stop, anti-mistouch switch, mod management.</p>
+      <p><b>Tech</b>: compiled with the Windows built-in csc, zero third-party dependencies. Win7 needs .NET 4.0+; Win10/11 work out of the box.</p>
+      <p><b>Mod extension</b>: at startup the app scans the <code>mods\</code> folder next to the exe for <code>*.dll</code> and loads any mod that implements <code>IVkMod</code>. The built-in Music mod can import and play a MIDI; the Quick Input mod provides timed text input and quick sequence arrangement; a mod implementing <code>IUiMod</code> has its UI injected directly into the main window's right-hand panel, no popup needed.</p>
+    </div>
+  </section>
+
+  <!-- ===== Directory structure ===== -->
+  <section id="struct">
+    <h2><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="#3178C6" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M3 9h18M9 21V9"/></svg></span>Directory Structure Overview</h2>
+<pre class="tree">virtual-keyboard-simulator/
+├── 虚拟键盘模拟器.exe  <span class="cm"># Main program (double-click to run)</span>
+├── setup.exe          <span class="cm"># Installer (for distribution)</span>
+├── README.md / .txt / .html  <span class="cm"># Notes (three formats)</span>
+├── <span class="d">app\</span>        <span class="cm"># All main-program source (for compile)</span>
+├── <span class="d">mods\</span>       <span class="cm"># Mod runtime directory (auto-scans *.dll at startup)</span>
+├── <span class="d">模组开发\</span>   <span class="cm"># Mod dev materials (manual/interface/examples/source)</span>
+├── <span class="d">MIDI 乐谱\</span>  <span class="cm"># Ready-made MIDI music files</span>
+└── <span class="d">工具\</span>       <span class="cm"># MIDI utility tools</span></pre>
+  </section>
+
+  <!-- ===== File details ===== -->
+  <section id="files">
+    <h2><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="#3178C6" stroke-width="1.8" stroke-linecap="round"><path d="M4 6h7l2 3h7v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/></svg></span>File / Directory Details</h2>
+
+    <div class="group">
+      <h3>Root directory</h3>
+      <div class="file"><span class="fname">虚拟键盘模拟器.exe</span><span class="fdesc">The application itself; double-click to launch, no install needed. Features listed in the overview.</span></div>
+      <div class="file"><span class="fname">setup.exe</span><span class="fdesc">Installation wizard that installs the main program + Music mod to a chosen directory, creates a shortcut, and supports uninstall. Use this when distributing to others.</span></div>
+      <div class="file"><span class="fname">setup.cs</span><span class="fdesc">Installer source (look here if you want to modify the installer).</span></div>
+      <div class="file"><span class="fname">README.md / .txt / .html</span><span class="fdesc">Three formats of the same project notes; pick any one.</span></div>
+    </div>
+
+    <div class="group">
+      <h3>app\ — Main-program source (4 files)</h3>
+      <div class="file"><span class="fname">VkCore.cs</span><span class="fdesc">Core logic: key injection (keybd_event), 104-key key table, recording global keyboard hook, millisecond playback scheduling, timeline step data.</span></div>
+      <div class="file"><span class="fname">Views.cs</span><span class="fdesc">UI components: virtual keyboard button view, step grid (timeline table), drag-to-change timing.</span></div>
+      <div class="file"><span class="fname">MainForm.cs</span><span class="fdesc">Main window: overall layout, toolbar (run/speed/loop/delay/record etc.), menus.</span></div>
+      <div class="file"><span class="fname">ModApi.cs</span><span class="fdesc">Mod system: mod interfaces (IVkMod / ICommandMod / IVkContext), mod loader, mod management window.</span></div>
+    </div>
+
+    <div class="group">
+      <h3>mods\ — Mod runtime directory</h3>
+      <div class="file"><span class="fname">MusicMod.dll</span><span class="fdesc">Music mod (compiled). Loaded automatically when the main program starts and scans this directory.</span></div>
+      <div class="file"><span class="fname">QuickInputMod.dll</span><span class="fdesc">Quick Input mod (compiled): timed input / quick arrangement of key sequences; its UI is injected directly into the main window's right-hand panel. This directory must not be renamed or moved; mods must be under the mods\ folder next to the exe. mods\ only holds compiled .dll files; source lives in the「模组开发」directory. After adding a mod or recompiling, restart the application.</span></div>
+    </div>
+
+    <div class="group">
+      <h3>模组开发\ — Mod development materials (kept separately)</h3>
+      <div class="file"><span class="fname">模组开发手册.md</span><span class="fdesc">Mod authoring manual: interface reference, steps to write a mod, how to compile, Win7 compatibility and C#5 syntax limits, etc.</span></div>
+      <div class="file"><span class="fname">模组接口 ModApi.cs</span><span class="fdesc">Mod-system interface source (same copy as app\ModApi.cs), for reference while developing. Includes the UI injection interfaces: IUiMod (UI injected directly into the main window's right-hand panel) + IVkContext.AddModUi/RemoveModUi.</span></div>
+      <div class="file"><span class="fname">示例模组 AutoEnterMod.cs</span><span class="fdesc">Minimal example mod source: shows how to write an "auto-enter on entering a key sequence".</span></div>
+      <div class="file"><span class="fname">音乐模组 MusicMod.cs</span><span class="fdesc">Music mod source: three playing modes, MIDI parse &amp; import, BPM-linked speed%.</span></div>
+      <div class="file"><span class="fname">快捷输入模组 QuickInputMod.cs</span><span class="fdesc">Quick Input mod source: ① timed text input (output keys in order within a total time / optional per-key duration); ② quick arrangement of key sequences (key+duration+snap+wait, with simultaneous-key chords). Implements IUiMod; UI injected directly into the main window's right-hand「快捷输入」tab (no popup).</span></div>
+      <div class="file"><span class="fname">编译模组.ps1</span><span class="fdesc">One-click compile script: compiles「音乐模组 MusicMod.cs」into ..\mods\MusicMod.dll.</span></div>
+      <div class="file"><span class="fname">编译快捷输入模组.ps1</span><span class="fdesc">One-click compile script: compiles「快捷输入模组 QuickInputMod.cs」into ..\mods\QuickInputMod.dll.</span></div>
+    </div>
+
+    <div class="group">
+      <h3>MIDI 乐谱\ — Ready-made MIDI music</h3>
+      <div class="file"><span class="fname">He's a Pirate 主旋律.mid</span><span class="fdesc">"Pirates of the Caribbean" main melody (273 notes, recommended).</span></div>
+      <div class="file"><span class="fname">He's a Pirate 复杂版.mid</span><span class="fdesc">"Pirates of the Caribbean" complex version (melody + harmony + bass, 1015 notes).</span></div>
+      <div class="file"><span class="fname">Let It Be 主旋律.mid</span><span class="fdesc">The Beatles' "Let It Be".</span></div>
+      <div class="file"><span class="fname">Yesterday 主旋律.mid</span><span class="fdesc">The Beatles' "Yesterday".</span></div>
+      <div class="file"><span class="fname">月亮代表我的心 主旋律.mid</span><span class="fdesc">Teresa Teng classic (Chinese song).</span></div>
+      <div class="file"><span class="fname">邓丽君 主旋律.mid</span><span class="fdesc">Teresa Teng track (source filename teresa-1, title to be confirmed).</span></div>
+      <div class="file"><span class="fname">caribbean_melody.mid</span><span class="fdesc">Early leftover Caribbean version (average usability; the two versions above are recommended).</span></div>
+    </div>
+
+    <div class="group">
+      <h3>工具\ — MIDI utility tools (for adding songs)</h3>
+      <div class="file"><span class="fname">_check.exe / _check.cs</span><span class="fdesc">Check a MIDI's structure: note count, black-key ratio, range, chords, total duration (to judge whether it is suitable to play).</span></div>
+      <div class="file"><span class="fname">_simp.exe / _simp.cs</span><span class="fdesc">Simplifier: reduce a complex MIDI to a single-track main melody (remove accompaniment/chords), producing a mod-friendly version.</span></div>
+      <div class="file"><span class="fname">_checkmod.cs / _checkmod.exe</span><span class="fdesc">Quick Input mod verification tool: 49 assertions validating timed allocation, arrangement &amp; chord timing, mod .dll loading, and UI injection (auto-inject on load/remove on unload/panel structure). Rerun for regression after changing the mod or the mod interface.</span></div>
+    </div>
+  </section>
+
+  <!-- ===== Quick start ===== -->
+  <section id="quick">
+    <h2><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="#3178C6" stroke-width="1.8" stroke-linecap="round"><path d="M13 2 4 14h6l-1 8 9-12h-6z"/></svg></span>Quick Start</h2>
+    <div class="card">
+      <ol class="steps">
+        <li><div><b>Launch</b><p>Double-click「虚拟键盘模拟器.exe」.</p></div></li>
+        <li><div><b>Build a sequence</b><p>Click keys on the virtual keyboard → steps are added to the timeline automatically; or click「录制」and simply type on the real keyboard to auto-generate press/release sequences; drag in the timeline to adjust press/release times.</p></div></li>
+        <li><div><b>Play</b><p>Set speed% / loop / delay → click「运行」. The app auto-minimizes and injects the sequence into the target window; press Ctrl+F9 for a global emergency stop.</p></div></li>
+        <li><div><b>Music performance</b><p>「模组管理」→ Music mod →「操作/导入…」→ pick a MIDI → choose play mode / instrument / BPM → play.</p></div></li>
+        <li><div><b>Quick input</b><p>Once the Quick Input mod is loaded, its UI appears directly in the main window's right-hand「快捷输入」tab (no popup). ① On the timed-input tab, enter characters / total time (optional per-key duration) / snap → generate steps; or ② on the quick-arrangement tab, fill in key / duration / snap / wait row by row (use + to join multiple keys on one row for a simultaneous chord) → generate steps. Then bring the target app to the foreground and click「运行」.</p></div></li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- ===== Install & distribute ===== -->
+  <section id="install">
+    <h2><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="#3178C6" stroke-width="1.8" stroke-linecap="round"><path d="M12 3v12m0 0 4-4m-4 4-4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg></span>Installation &amp; Distribution</h2>
+    <div class="card">
+      <ul class="plain">
+        <li><b>Install</b>double-click setup.exe, choose a directory (defaults to the current user's programs directory, no admin needed); it automatically installs the main program + Music mod and creates a shortcut.</li>
+        <li><b>Silent install</b><code>setup.exe /install &lt;directory&gt;</code></li>
+        <li><b>Uninstall</b>Control Panel → Programs → Uninstall「虚拟键盘模拟器」, or <code>setup.exe /uninstall</code></li>
+        <li><b>Portable distribution</b>just copy「虚拟键盘模拟器.exe」+ the <code>mods\</code> folder and it works.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== Development ===== -->
+  <section id="dev">
+    <h2><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="#3178C6" stroke-width="1.8" stroke-linecap="round"><path d="m8 9-4 3 4 3m8-6 4 3-4 3m-3-8-2 16"/></svg></span>Development &amp; Mod Extension</h2>
+    <div class="card">
+      <p><b>Modify the main program</b>: edit the app\ source → recompile with the command below → overwrite the exe.</p>
+<pre class="cmd">C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe /nologo /target:winexe /optimize+ /out:虚拟键盘模拟器.exe /r:System.dll /r:System.Core.dll /r:System.Drawing.dll /r:System.Windows.Forms.dll app\VkCore.cs app\Views.cs app\MainForm.cs app\ModApi.cs</pre>
+      <p><b>Write a new mod</b>: first read「模组开发\模组开发手册.md」→ follow「示例模组 AutoEnterMod.cs」to write code → compile with「模组开发\编译模组.ps1」→ drop the .dll into <code>mods\</code> → restart the app → load and verify via「模组管理」.</p>
+      <p><b>Modify the Quick Input mod</b>: edit「模组开发\快捷输入模组 QuickInputMod.cs」→ compile with「模组开发\编译快捷输入模组.ps1」→ restart the app; after logic changes run「工具\_checkmod.exe」for regression checks.</p>
+      <p><b>Inject a mod UI directly into the main program</b>: implement <code>IUiMod</code> (<code>UiTitle</code>/<code>UiContent</code>); after loading it automatically appears as a right-hand tab (no「操作/导入…」popup) and is removed automatically on unload. The mod panel uses a dark, borderless style, auto-shrinks on narrow windows without covering the main UI, and has a collapse/expand button on its right edge for temporarily hiding it. See「模组开发\模组开发手册.md」3.6.</p>
+    </div>
+  </section>
+
+</main>
+
+<footer class="wrap">
+  Virtual Keyboard Simulator · Project Notes (README.html) · consistent with README.md / README.txt
+</footer>
+
+</body>
+</html>
